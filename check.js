@@ -122,7 +122,7 @@ section("Profile");
   check("an end before the start is left out", !periods.some((row) => row.company === "Initech"));
 
   const gaps = missingFromProfile(withDefaults({ ...DEFAULT_PROFILE }));
-  check("the default profile still needs company names before it runs", gaps.some((gap) => /company name/.test(gap)), gaps.join("; "));
+  check("explicit main-prompt employment locks do not require duplicate job rows", !gaps.some((gap) => /company name/.test(gap)), gaps.join("; "));
   check("the default profile has no API key baked in", gaps.some((gap) => /API key/.test(gap)) && !withDefaults({}).apiKey, gaps.join("; "));
   const named = missingFromProfile(withDefaults({ ...DEFAULT_PROFILE, apiKey: "sk-ant-api03-test", experience: [{ company: "Acme", from: "2022-01", to: "" }] }));
   check("with a company named and a key entered the profile is complete", named.length === 0, named.join("; "));
@@ -151,7 +151,7 @@ section("Writer");
   check("the model's location is replaced with the entered company location", pinned.experience[0].location === "Austin, Texas");
   check("the role and bullets are the model's", pinned.experience[0].role === "Engineer");
   check("the current embedded prompt is available for editing", /expert technical resume writer/.test(defaultResumePrompt(profile)));
-  check("resume documents always use Calibri", themeFrom({ ...profile, fontFamily: "Georgia" }).fontFamily === "Calibri");
+  check("resume documents use the selected font", themeFrom({ ...profile, fontFamily: "Georgia" }).fontFamily === "Georgia");
 }
 
 /* ------------------------------------------------------------- posting */

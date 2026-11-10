@@ -56,7 +56,7 @@
       </div>
       <p class="note">
         This is the full system prompt used to create resume content. It initially shows the current built-in prompt;
-        edit it to replace that prompt for future resumes.
+        edit it to replace that prompt for future resumes. Explicit employment names, dates and bullet counts in this prompt override the job rows; job rows supply those values when the prompt does not lock them.
       </p>
       <p class="note">
         The bot writes each resume and cover letter itself, with the same code the app uses. One provider and one key
@@ -118,10 +118,9 @@
     <section class="panel">
       <h2>What every resume is built on</h2>
       <p class="note">
-        <strong>The employers are yours.</strong> Unlike the other apply bots, the companies on this resume are not
-        chosen by the model: each job row below names the company and the months it ran, and the resume carries
-        exactly those, in that order. The model writes only the title and the bullets under each, tailored to the
-        posting, and the summary and skills above them.
+        <strong>Your main resume prompt controls the resume.</strong> If it locks employers, dates or bullet counts,
+        those rules take precedence. Otherwise, the job rows below supply the employment history in order.
+        Role descriptions, technical skills and competencies remain separate parts of the resume.
       </p>
 
       <h3>Jobs</h3>
@@ -184,7 +183,7 @@
       <div class="grid">
         <div>
           <label for="fontFamily">Font</label>
-          <select id="fontFamily" disabled>
+          <select id="fontFamily">
             <option value="Calibri">Calibri</option>
           </select>
         </div>

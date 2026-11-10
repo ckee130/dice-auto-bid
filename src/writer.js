@@ -1,22 +1,12 @@
 /**
- * Writing the application, here, with no app running anywhere.
- *
- * The bot used to ask Resume Builder for a resume over HTTP, which meant the
- * app had to be deployed, reachable and authenticated before a single
- * application could be sent. It does the writing itself now: install the
- * extension, set a key, press Run.
- *
- * The code doing the writing is still the app's. src/vendor/generation.js is
- * compiled from the app's own modules by build.mjs, so the prompts, the rules
- * about what may be claimed, the repair passes and the PDF layout are one
- * implementation rather than two that drift. What lives in this file is only
- * the part that is specific to the bot: turning a profile into a candidate,
- * ordering the three steps, and handing back blobs a form can accept.
+ * The extension's main prompt governs resume generation and structural validation.
+ * Shared provider/PDF primitives and cover-letter generation come from the vendor
+ * bundle; the extension owns the resume schema adapter and reference layout.
  */
 
 import {
   ACCENT_OPTIONS,
-  buildResumePdf,
+  buildPromptResumePdf as buildResumePdf,
   buildCoverLetterPdf,
   DEFAULT_CANDIDATE,
   DEFAULT_MODELS,
@@ -29,10 +19,10 @@ import {
   describeKeyProblem,
   FONT_OPTIONS,
   generateCoverLetter,
-  generateResume,
   PROVIDER_LABELS,
   ProviderError,
 } from "./vendor/generation.js";
+import { generatePromptResume as generateResume } from "./prompt-generation.js";
 import { DEFAULT_RESUME_PROMPT } from "./resume-prompt.js";
 import { profileLink } from "./answers.js";
 import { experiencePeriods } from "./profile.js";
@@ -191,7 +181,7 @@ export function themeFrom(profile) {
   const accent = String(profile.accentColor ?? "").replace(/^#/, "").toUpperCase();
   const size = Number(profile.baseSize);
   return {
-    fontFamily: "Calibri",
+    fontFamily: FONT_OPTIONS.includes(profile.fontFamily) ? profile.fontFamily : DEFAULT_THEME.fontFamily,
     accentColor: /^[0-9A-F]{6}$/.test(accent) ? accent : DEFAULT_THEME.accentColor,
     density: ["compact", "normal", "roomy"].includes(profile.density) ? profile.density : DEFAULT_THEME.density,
     baseSize: Number.isFinite(size) && size >= 9 && size <= 12 ? size : DEFAULT_THEME.baseSize,
@@ -226,23 +216,9 @@ export function defaultResumePrompt() {
   return DEFAULT_RESUME_PROMPT;
 }
 
-/** Adapt the prompt's field names to the shared generator's PDF schema. */
+/** Use the main prompt verbatim; adapt fields after generation, never in the model instructions. */
 function generationPrompt(profile) {
-  const prompt = String(profile.resumePrompt ?? "").trim() || defaultResumePrompt();
-  return `${prompt}
-
-EXTENSION OUTPUT ADAPTER (binding; replaces only the JSON field names above):
-Emit targetTitle instead of resume_title. Emit coreSkills instead of skill_groups,
-using {category, skills} instead of {category, items}; append additional_categories
-as further coreSkills groups with the same mapping. Within experience, emit role
-instead of role_title, scope instead of role_description, and split dates into
-startDate and endDate (for example "Oct 2013" and "Present"). Keep company,
-location, bullets, and summary unchanged. Put company_name and the top-level
-role_title in tailoring as jdCompany and jdTitle. Do not emit the original field
-names. Identity, contact and education are supplied by the extension.
-The job description and candidate facts follow in the user message. Follow the
-system prompt's authenticity, internship and numeric rules when user-message
-heuristics conflict. Preserve the supplied candidate's verified facts.`;
+  return String(profile.resumePrompt ?? "").trim() || defaultResumePrompt();
 }
 
 /**
@@ -298,6 +274,8 @@ export function resumeToText(resume) {
     if (job.environment?.length) lines.push(`Environment: ${job.environment.join(", ")}`);
   }
 
+  for (const group of resume.competencies ?? []) lines.push(`${group.category}: ${group.skills.join(", ")}`);
+
   const school = resume.education;
   if (school?.degree) lines.push("", `${school.degree}, ${school.school} (${school.year})`);
 
@@ -320,13 +298,13 @@ export async function writeResumePreview(profile, job, signal) {
         systemPrompt: generationPrompt(profile),
         pinnedCompanies: settings.slots.map((slot) => slot.company),
         useCuratedCompanies: false,
-        includeScopeLine: spec.scopeLine,
+        includeScopeLine: true,
         includeEnvironmentLine: spec.environmentLine,
         variant: spec.variant,
       },
       signal,
     );
-    const resume = withPinnedEmployers(describesCompanies(profile) ? generated.resume : withoutCompanyContext(generated.resume), settings.slots);
+    const resume = generated.resume;
     const pdf = await buildResumePdf(resume, settings.theme, settings.format);
     const name = resume.name || settings.candidate.name;
     return {
@@ -349,19 +327,14 @@ export async function writeResumePreview(profile, job, signal) {
  * Called only after the posting has been confirmed to take Easy Apply, so
  * a posting this bot cannot submit never costs a model call.
  *
- * The employers are pinned: each slot is handed the company name from the
- * profile's job row, the validator holds the draft to that name, and the
- * name is written over the draft once more here in the exact spelling the
- * profile has, so no run can send a resume with a past employer the person
- * did not list.
+ * Explicit employment locks in the main prompt take precedence. Otherwise,
+ * the profile job rows define the employers and dates. Validated content is
+ * adapted to PDF fields without rewriting its employment history.
  */
 export async function writeApplication(profile, job, signal) {
   const settings = settingsFrom(profile);
 
   try {
-    // The format decides the optional blocks and the catalog window: a
-    // scope and stack line per role for the impact layout, achievement
-    // lines for the hybrid, and a different set of employers for each.
     const spec = formatSpec(settings.format);
     const generated = await generateResume(
       job.jd,
@@ -370,17 +343,16 @@ export async function writeApplication(profile, job, signal) {
         systemPrompt: generationPrompt(profile),
         pinnedCompanies: settings.slots.map((slot) => slot.company),
         useCuratedCompanies: false,
-        includeScopeLine: spec.scopeLine,
+        includeScopeLine: true,
         includeEnvironmentLine: spec.environmentLine,
         variant: spec.variant,
       },
       signal,
     );
 
-    // The line under each employer describing the company is optional:
-    // dropped here, after validation, so the model's output is checked whole
-    // and the PDF, the letter and the form answers all see the same resume.
-    const resume = withPinnedEmployers(describesCompanies(profile) ? generated.resume : withoutCompanyContext(generated.resume), settings.slots);
+    // Generation has already validated the main prompt. Do not repin dates,
+    // employers or counts from settings over its explicit employment locks.
+    const resume = generated.resume;
     const role = job.title?.trim() || resume.targetTitle || "the role";
     const company = job.company?.trim() || resume.tailoring?.jdCompany || "";
     const spend = { resume: record(settings.model, generated.usage ?? {}) };

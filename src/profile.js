@@ -1,3 +1,6 @@
+import { employmentRules } from "./prompt-rules.js";
+import { DEFAULT_RESUME_PROMPT } from "./resume-prompt.js";
+
 /**
  * The facts about the applicant that no model may invent.
  *
@@ -206,8 +209,9 @@ export function missingFromProfile(profile) {
 
   const rows = Array.isArray(profile?.experience) ? profile.experience : [];
   const periods = experiencePeriods(profile);
-  if (periods.length === 0) gaps.push("at least one job - a company name and the months it ran - for the resume to be written around");
-  else if (rows.some((row) => (String(row?.from ?? "").trim() || String(row?.to ?? "").trim()) && !String(row?.company ?? "").trim())) {
+  const promptLocks = employmentRules(String(profile.resumePrompt ?? "").trim() || DEFAULT_RESUME_PROMPT, []);
+  if (!promptLocks.length && periods.length === 0) gaps.push("at least one job - a company name and the months it ran - for the resume to be written around");
+  else if (!promptLocks.length && rows.some((row) => (String(row?.from ?? "").trim() || String(row?.to ?? "").trim()) && !String(row?.company ?? "").trim())) {
     gaps.push("a company name on every job row (a row with dates and no company is left out of the resume)");
   }
   if (!String(profile.school ?? "").trim() || !String(profile.degree ?? "").trim()) gaps.push("the school and degree for the resume's education");

@@ -3,7 +3,7 @@
  * written on, and how the run behaves.
  */
 
-import { ACCENTS, checkWriter, defaultResumePrompt, FORMATS, monthLabel, writeResumePreview } from "./writer.js";
+import { ACCENTS, checkWriter, defaultResumePrompt, FONTS, FORMATS, monthLabel, writeResumePreview } from "./writer.js";
 import { buildQueue } from "./links.js";
 import { DEFAULT_PROFILE, experiencePeriods } from "./profile.js";
 import { allLinks, clearLinks, readProfile, saveLinks, writeProfile } from "./store.js";
@@ -26,6 +26,11 @@ function show(element, message, kind) {
 const FIELDS = Object.keys(DEFAULT_PROFILE).filter((key) => key !== "experience");
 
 function fillChoices() {
+  $("fontFamily").replaceChildren(...FONTS.map(font => {
+    const option = document.createElement("option");
+    option.value = option.textContent = font;
+    return option;
+  }));
   for (const accent of ACCENTS) {
     const option = document.createElement("option");
     option.value = accent.value;
@@ -52,7 +57,6 @@ function fillChoices() {
     describeFormat();
     const format = FORMATS.find((candidate) => candidate.id === $("resumeFormat").value);
     if (!format) return;
-    $("fontFamily").value = "Calibri";
     $("accentColor").value = format.theme.accentColor;
     paintSwatch();
   });
@@ -66,7 +70,6 @@ function fillProfile(profile) {
     if (element.type === "checkbox") element.checked = Boolean(profile[key]);
     else element.value = profile[key] ?? "";
   }
-  $("fontFamily").value = "Calibri";
   $("accentColor").dispatchEvent(new Event("fill"));
   $("resumeFormat").dispatchEvent(new Event("fill"));
   renderJobs(Array.isArray(profile.experience) ? profile.experience : DEFAULT_PROFILE.experience);
@@ -222,7 +225,7 @@ async function importSettings(file) {
     if (!imported || typeof imported !== "object" || Array.isArray(imported)) {
       throw new Error("The JSON does not contain a settings object.");
     }
-    const profile = { ...DEFAULT_PROFILE, ...imported, fontFamily: "Calibri" };
+    const profile = { ...DEFAULT_PROFILE, ...imported };
     if (!Array.isArray(profile.experience)) throw new Error('The "experience" setting must be a list of jobs.');
     fillProfile(profile);
     const saved = readForm();

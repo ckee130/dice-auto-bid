@@ -6,6 +6,7 @@
   "description": "Chrome extension that works through a pasted list of Dice job links, writes a tailored resume and cover letter for each Easy Apply posting on the applicant's own employers, and submits Dice's three-step application. Standalone: nothing else has to be running.",
   "scripts": {
     "build": "node build.mjs",
-    "check": "node check.js"
+    "check": "node check.js",
+    "check:prompt": "node prompt-check.test.js"
   }
 }
