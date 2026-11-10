@@ -70,7 +70,7 @@ test("PDF renders full prompt structure with separate competency section",async(
  try {
    const file=join(dir,"resume.pdf");writeFileSync(file,bytes);
    const text=execFileSync("pdftotext",[file,"-"],{encoding:"utf8"});
-   const headings=["PROFESSIONAL SUMMARY","WORK EXPERIENCE","TECHNICAL SKILLS","EDUCATION","CORE COMPETENCIES"];
+   const headings=["Professional Summary","Work Experience","Technical Skills","Education","Core Competencies"];
    let previous=-1;for(const heading of headings){const index=text.indexOf(heading);assert.ok(index>previous,heading);previous=index;}
    assert.ok(text.includes("Oct 2013 - Present"));
    assert.ok(text.includes("FaceBook"));
