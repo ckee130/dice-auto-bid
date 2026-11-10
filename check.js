@@ -150,7 +150,7 @@ section("Writer");
   check("the model's spelling of the employer is replaced with the profile's", pinned.experience.map((role) => role.company).join("|") === "Acme Corp|Globex");
   check("the model's location is replaced with the entered company location", pinned.experience[0].location === "Austin, Texas");
   check("the role and bullets are the model's", pinned.experience[0].role === "Engineer");
-  check("the current embedded prompt is available for editing", /elite Principal Technical Recruiter/.test(defaultResumePrompt(profile)));
+  check("the current embedded prompt is available for editing", /expert technical resume writer/.test(defaultResumePrompt(profile)));
   check("resume documents always use Calibri", themeFrom({ ...profile, fontFamily: "Georgia" }).fontFamily === "Calibri");
 }
 

@@ -18,7 +18,6 @@ import {
   ACCENT_OPTIONS,
   buildResumePdf,
   buildCoverLetterPdf,
-  buildSystemPrompt as buildResumeSystemPrompt,
   DEFAULT_CANDIDATE,
   DEFAULT_MODELS,
   DEFAULT_SLOTS,
@@ -34,6 +33,7 @@ import {
   PROVIDER_LABELS,
   ProviderError,
 } from "./vendor/generation.js";
+import { DEFAULT_RESUME_PROMPT } from "./resume-prompt.js";
 import { profileLink } from "./answers.js";
 import { experiencePeriods } from "./profile.js";
 import { record } from "./spend.js";
@@ -222,16 +222,27 @@ function settingsFrom(profile) {
 }
 
 /** The current embedded resume prompt, evaluated with the applicant and job rows on screen. */
-export function defaultResumePrompt(profile) {
-  const format = formatFrom(profile);
-  const spec = formatSpec(format);
-  return buildResumeSystemPrompt({
-    candidate: candidateFrom(profile),
-    slots: slotsFrom(profile),
-    format,
-    includeScopeLine: spec.scopeLine,
-    includeEnvironmentLine: spec.environmentLine,
-  });
+export function defaultResumePrompt() {
+  return DEFAULT_RESUME_PROMPT;
+}
+
+/** Adapt the prompt's field names to the shared generator's PDF schema. */
+function generationPrompt(profile) {
+  const prompt = String(profile.resumePrompt ?? "").trim() || defaultResumePrompt();
+  return `${prompt}
+
+EXTENSION OUTPUT ADAPTER (binding; replaces only the JSON field names above):
+Emit targetTitle instead of resume_title. Emit coreSkills instead of skill_groups,
+using {category, skills} instead of {category, items}; append additional_categories
+as further coreSkills groups with the same mapping. Within experience, emit role
+instead of role_title, scope instead of role_description, and split dates into
+startDate and endDate (for example "Oct 2013" and "Present"). Keep company,
+location, bullets, and summary unchanged. Put company_name and the top-level
+role_title in tailoring as jdCompany and jdTitle. Do not emit the original field
+names. Identity, contact and education are supplied by the extension.
+The job description and candidate facts follow in the user message. Follow the
+system prompt's authenticity, internship and numeric rules when user-message
+heuristics conflict. Preserve the supplied candidate's verified facts.`;
 }
 
 /**
@@ -306,7 +317,7 @@ export async function writeResumePreview(profile, job, signal) {
       job.jd,
       {
         ...settings,
-        systemPrompt: String(profile.resumePrompt ?? "").trim() || undefined,
+        systemPrompt: generationPrompt(profile),
         pinnedCompanies: settings.slots.map((slot) => slot.company),
         useCuratedCompanies: false,
         includeScopeLine: spec.scopeLine,
@@ -356,7 +367,7 @@ export async function writeApplication(profile, job, signal) {
       job.jd,
       {
         ...settings,
-        systemPrompt: String(profile.resumePrompt ?? "").trim() || undefined,
+        systemPrompt: generationPrompt(profile),
         pinnedCompanies: settings.slots.map((slot) => slot.company),
         useCuratedCompanies: false,
         includeScopeLine: spec.scopeLine,
