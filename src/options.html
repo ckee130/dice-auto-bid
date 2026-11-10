@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Dice Apply Bot - settings</title>
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 22px 26px 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Dice Apply Bot</h1>
+      <span class="note" style="margin: 0">Everything here is stored on this machine only.</span>
+    </header>
+
+    <section class="panel">
+      <h2>Dice job links</h2>
+      <p class="note">
+        The only input a run needs. Paste Dice job pages - <code>https://www.dice.com/job-detail/...</code> - one per
+        line, in the order you want them sent. Each is opened on Dice and read; where the posting takes
+        <strong>Easy Apply</strong>, a resume and cover letter are written for it and the three steps of Dice's
+        application are filled and submitted. A posting that applies on the company's own site is listed on the
+        day's <code>other links.csv</code> and left alone.
+      </p>
+      <p class="note">
+        <strong>Sign in to Dice in this browser first</strong>, as the applicant. The application form is behind the
+        account; a run that finds the sign-in page stops and says so.
+      </p>
+
+      <label for="pastedLinks">Links</label>
+      <textarea id="pastedLinks" spellcheck="false" placeholder="One Dice link per line."></textarea>
+      <p class="note">Repeats are applied to once. Anything that is not a Dice job link is reported and dropped.</p>
+
+      <div class="row">
+        <button id="load-links" class="primary small">Load links</button>
+        <button id="clear-links" class="ghost">Clear the loaded list</button>
+      </div>
+      <p class="note">A run works through exactly the list loaded here. Load it again after pasting more.</p>
+
+      <div class="counts" id="link-counts"></div>
+      <ul class="plain" id="link-list"></ul>
+      <p id="links-status" class="status" hidden></p>
+    </section>
+
+    <section class="panel">
+      <h2>Writing the application</h2>
+      <label for="resumePrompt">Resume prompt</label>
+      <textarea id="resumePrompt" class="prompt" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="reset-resume-prompt" class="ghost small" type="button">Use current built-in prompt</button>
+      </div>
+      <p class="note">
+        This is the full system prompt used to create resume content. It initially shows the current built-in prompt;
+        edit it to replace that prompt for future resumes.
+      </p>
+      <p class="note">
+        The bot writes each resume and cover letter itself, with the same code the app uses. One provider and one key
+        write both, and answer any screener question the settings below cannot. The key filled in is the team's
+        Anthropic key; replace it to spend from another account.
+      </p>
+
+      <div class="grid">
+        <div>
+          <label for="provider">Provider</label>
+          <select id="provider">
+            <option value="anthropic">Anthropic</option>
+            <option value="openai">OpenAI</option>
+            <option value="google">Google</option>
+          </select>
+        </div>
+        <div>
+          <label for="model">Model <small>(blank for the default)</small></label>
+          <input id="model" type="text" spellcheck="false" placeholder="claude-sonnet-4-5" />
+        </div>
+      </div>
+
+      <label for="apiKey">API key</label>
+      <input id="apiKey" type="password" spellcheck="false" autocomplete="off" />
+      <div class="row">
+        <button id="test-app" class="ghost small">Check the key</button>
+        <span id="app-status" class="status" hidden></span>
+      </div>
+      <p class="note">
+        Each application costs one call for the resume (two or three if a draft breaks a rule and is repaired), one for
+        the letter, and one per screener question the settings cannot answer. The log says after each what it cost.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Simulate and preview a resume</h2>
+      <p class="note">
+        Paste a job description to generate the exact resume PDF a real run would attach. This makes one resume model
+        call, opens the PDF for inspection, and does not visit Dice, create a cover letter, or submit anything.
+      </p>
+      <div class="grid">
+        <div>
+          <label for="previewTitle">Job title <small>(optional)</small></label>
+          <input id="previewTitle" type="text" placeholder="Senior Data Engineer" />
+        </div>
+        <div>
+          <label for="previewCompany">Hiring company <small>(optional)</small></label>
+          <input id="previewCompany" type="text" placeholder="Example Company" />
+        </div>
+      </div>
+      <label for="previewJd">Job description</label>
+      <textarea id="previewJd" class="preview-jd" placeholder="Paste the complete job description here."></textarea>
+      <div class="row">
+        <button id="preview-resume" class="primary small" type="button">Generate resume preview</button>
+        <span id="preview-status" class="status" hidden></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>What every resume is built on</h2>
+      <p class="note">
+        <strong>The employers are yours.</strong> Unlike the other apply bots, the companies on this resume are not
+        chosen by the model: each job row below names the company and the months it ran, and the resume carries
+        exactly those, in that order. The model writes only the title and the bullets under each, tailored to the
+        posting, and the summary and skills above them.
+      </p>
+
+      <h3>Jobs</h3>
+      <p class="note">
+        Newest first. Company name and location as they should print, then the months it ran; leave "to" empty for a job still held.
+        A row without a company is left out of the resume.
+      </p>
+      <div id="experience-list" class="jobs"></div>
+      <div class="row">
+        <button id="add-job" class="ghost small">Add a job</button>
+        <span id="experience-summary" class="note"></span>
+      </div>
+
+      <h3>Education</h3>
+      <div class="grid">
+        <div>
+          <label for="degree">Degree</label>
+          <input id="degree" type="text" placeholder="Bachelor of Science in Computer Science" />
+        </div>
+        <div>
+          <label for="school">University</label>
+          <input id="school" type="text" placeholder="Dalian University of Technology" />
+        </div>
+        <div>
+          <label for="schoolLocation">Where it is</label>
+          <input id="schoolLocation" type="text" placeholder="Dalian, China" />
+        </div>
+        <div>
+          <label for="graduationYear">Graduation year</label>
+          <input id="graduationYear" type="text" inputmode="numeric" placeholder="2017" />
+        </div>
+      </div>
+
+      <h3>Resume format</h3>
+      <div class="grid">
+        <div>
+          <label for="resumeFormat">Format</label>
+          <select id="resumeFormat"></select>
+        </div>
+        <div>
+          <span class="note" id="format-note"></span>
+        </div>
+      </div>
+      <label class="check">
+        <input id="companyDescriptions" type="checkbox" />
+        <span>
+          Describe each company under its name
+          <small>A short italic line under every employer saying what the company does. The model writes it from what it knows of the company you named, so it can be wrong for a company it does not know; off, the resume carries the name alone.</small>
+        </span>
+      </label>
+      <label class="check">
+        <input id="attachCoverLetter" type="checkbox" />
+        <span>
+          Attach the cover letter
+          <small>Dice takes a cover letter as an optional second file on the first step. Untick to send the resume alone; the letter is still written and saved to the folder.</small>
+        </span>
+      </label>
+
+      <h3>Document style</h3>
+      <div class="grid">
+        <div>
+          <label for="fontFamily">Font</label>
+          <select id="fontFamily" disabled>
+            <option value="Calibri">Calibri</option>
+          </select>
+        </div>
+        <div>
+          <label for="accentColor">Accent color <span id="accent-swatch" class="swatch"></span></label>
+          <select id="accentColor"></select>
+        </div>
+        <div>
+          <label for="density">Density</label>
+          <select id="density">
+            <option value="compact">Compact - fits more on one page</option>
+            <option value="normal">Normal</option>
+            <option value="roomy">Roomy - easiest to skim</option>
+          </select>
+        </div>
+        <div>
+          <label for="baseSize">Body size <small>(points, 9 to 12)</small></label>
+          <input id="baseSize" type="number" min="9" max="12" step="0.5" />
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Who is applying</h2>
+      <p class="note">Printed on the resume and typed into the form exactly as written. Nothing here is generated.</p>
+
+      <div class="grid">
+        <div>
+          <label for="profileName">Profile name <small>(the folder this browser's files go under)</small></label>
+          <input id="profileName" type="text" autocomplete="off" placeholder="blank: the applicant's name" />
+        </div>
+        <div>
+          <p class="note">
+            Everything a day produces goes to <code>Downloads/job applied-folder/&lt;day&gt;/&lt;profile name&gt;/</code>.
+            Two browsers on one machine share one Downloads; give each its own name here.
+          </p>
+        </div>
+      </div>
+      <div class="grid">
+        <div>
+          <label for="firstName">First name</label>
+          <input id="firstName" type="text" autocomplete="off" />
+        </div>
+        <div>
+          <label for="lastName">Last name</label>
+          <input id="lastName" type="text" autocomplete="off" />
+        </div>
+        <div>
+          <label for="email">Email</label>
+          <input id="email" type="email" autocomplete="off" />
+        </div>
+        <div>
+          <label for="phone">Phone</label>
+          <input id="phone" type="tel" autocomplete="off" />
+        </div>
+      </div>
+
+      <div class="grid three">
+        <div>
+          <label for="city">City</label>
+          <input id="city" type="text" />
+        </div>
+        <div>
+          <label for="state">State</label>
+          <input id="state" type="text" placeholder="Texas" />
+        </div>
+        <div>
+          <label for="zip">ZIP</label>
+          <input id="zip" type="text" inputmode="numeric" />
+        </div>
+      </div>
+      <p class="note">
+        Dice asks for the city of residence on most applications and offers a list of "City, ST, USA" entries; the city
+        and state here are what is typed to find yours.
+      </p>
+
+      <label for="country">Country</label>
+      <input id="country" type="text" />
+
+      <div class="grid three">
+        <div>
+          <label for="linkedin">LinkedIn</label>
+          <input id="linkedin" type="url" spellcheck="false" />
+        </div>
+        <div>
+          <label for="github">GitHub</label>
+          <input id="github" type="url" spellcheck="false" placeholder="https://github.com/..." />
+        </div>
+        <div>
+          <label for="website">Website or portfolio</label>
+          <input id="website" type="url" spellcheck="false" />
+        </div>
+      </div>
+      <label class="check">
+        <input id="linksOnResume" type="checkbox" />
+        <span>
+          Print these links on the resume
+          <small>Puts the LinkedIn, GitHub and website addresses on the resume's contact line, beside the email and phone.</small>
+        </span>
+      </label>
+    </section>
+
+    <section class="panel">
+      <h2>The questions Dice and its employers ask</h2>
+      <p class="note">
+        Dice itself asks for work authorization and the city of residence; both come from here. An employer may add
+        screener questions of its own - these answers cover the usual ones, and the model answers the rest from the
+        resume written for the posting and the facts below.
+      </p>
+
+      <div class="grid">
+        <div>
+          <label for="workAuthorization">Work authorization</label>
+          <select id="workAuthorization">
+            <option value="us-citizen">US citizen</option>
+            <option value="permanent-resident">Green card holder</option>
+            <option value="visa-holder">Visa holder, authorized to work (H1 or EAD)</option>
+            <option value="needs-sponsorship">Needs an H1 visa</option>
+          </select>
+        </div>
+        <div>
+          <label for="requiresSponsorship">Will you need sponsorship, now or later?</label>
+          <select id="requiresSponsorship">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <div>
+          <label for="willingToRelocate">Willing to relocate</label>
+          <select id="willingToRelocate">
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <div>
+          <label for="willingToTravel">Able to travel when the role asks</label>
+          <select id="willingToTravel">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div>
+          <label for="over18">18 or over</label>
+          <select id="over18">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div>
+          <label for="backgroundCheck">Willing to undergo a background check or drug test</label>
+          <select id="backgroundCheck">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div>
+          <label for="startDate">Earliest start date or notice period</label>
+          <input id="startDate" type="text" placeholder="Two weeks from offer" />
+        </div>
+        <div>
+          <label for="remotePreference">Work preference</label>
+          <input id="remotePreference" type="text" placeholder="Remote" />
+        </div>
+        <div>
+          <label for="techYears">Years of experience to give for any technology asked about</label>
+          <input id="techYears" type="number" min="0" max="30" step="1" />
+        </div>
+        <div>
+          <label for="salaryFallback">Salary to ask for when the posting states none</label>
+          <input id="salaryFallback" type="number" min="0" step="1000" />
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Telling you in Slack</h2>
+      <p class="note">
+        An application this bot fills but cannot send is left open in its tab as it stands, with the files attached and
+        the answers typed, for you to finish. With a bot token and a channel here, each one is announced there, and one
+        more message when the run ends says what went and what is waiting. Leave both blank to send nothing.
+      </p>
+      <div class="grid">
+        <div>
+          <label for="slackToken">Bot token</label>
+          <input id="slackToken" type="password" spellcheck="false" autocomplete="off" placeholder="xoxb-..." />
+        </div>
+        <div>
+          <label for="slackChannel">Channel</label>
+          <input id="slackChannel" type="text" spellcheck="false" placeholder="#job-applications or C0123456789" />
+        </div>
+      </div>
+      <div class="row">
+        <button id="test-slack" class="ghost small">Send a test message</button>
+        <span id="slack-status" class="status" hidden></span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>How the run behaves</h2>
+
+      <label class="check">
+        <input id="dryRun" type="checkbox" />
+        <span>
+          Dry run
+          <small>Fills each application through to the review step and leaves it open without pressing Submit. With it on, nothing is ever sent.</small>
+        </span>
+      </label>
+
+      <div class="grid">
+        <div>
+          <label for="delayMs">Pause between applications, in milliseconds</label>
+          <input id="delayMs" type="number" min="0" step="500" />
+        </div>
+        <div>
+          <label for="maxPerRun">Stop after this many jobs (0 for no limit)</label>
+          <input id="maxPerRun" type="number" min="0" step="1" />
+        </div>
+      </div>
+      <p class="note">A submitted Dice application cannot be withdrawn. The first real run is worth capping.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Settings backup</h2>
+      <p class="note">
+        Save every setting, including job history, the resume prompt, and the API and Slack keys, to a JSON file.
+        Keep the file private because its keys are stored as readable text.
+      </p>
+      <div class="row">
+        <button id="export-settings" class="ghost small" type="button">Save settings as JSON</button>
+        <button id="import-settings" class="ghost small" type="button">Load settings from JSON</button>
+        <input id="settings-file" type="file" accept="application/json,.json" hidden />
+      </div>
+      <p id="settings-file-status" class="status" hidden></p>
+    </section>
+
+    <div class="sticky">
+      <button id="save" class="primary">Save</button>
+      <p id="status" class="status" hidden></p>
+    </div>
+
+    <script src="options.js" type="module"></script>
+  </body>
+</html>

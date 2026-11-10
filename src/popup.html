@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body {
+        width: 420px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Dice Apply Bot</h1>
+      <a href="#" id="settings">Settings</a>
+    </header>
+
+    <p id="ready" class="note"></p>
+    <p id="mode" class="status" hidden></p>
+
+    <section class="run-summary">
+      <h2>Application status so far</h2>
+      <div id="bid-status" class="status-grid"></div>
+      <p id="last-result" class="note"></p>
+    </section>
+
+    <div class="row">
+      <button id="run" class="primary">Run</button>
+    </div>
+    <div class="row">
+      <button id="stop" class="ghost" disabled>Stop</button>
+      <button id="probe" class="ghost">Probe this tab</button>
+      <button id="export" class="ghost">Export CSV</button>
+    </div>
+
+    <div id="open-for-you" class="open-for-you" hidden></div>
+
+    <div class="progress" hidden id="progress"><span style="width: 0%"></span></div>
+    <div id="log"></div>
+
+    <script src="popup.js" type="module"></script>
+  </body>
+</html>

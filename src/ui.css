@@ -1,0 +1,450 @@
+:root {
+  --accent: #8a1c45;
+  --ink: #1f2430;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --bg: #ffffff;
+  --soft: #f8f7f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 14px;
+  font: 13px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--accent);
+  letter-spacing: 0.01em;
+}
+
+h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+h3 {
+  margin: 16px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* One job on the resume: its number, from, to, and a way to drop it. */
+.jobs .job {
+  display: grid;
+  grid-template-columns: 2.2em 1.5fr 1.25fr 1fr auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.jobs .job .n {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.jobs .job .sep {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.jobs input[type="month"],
+.jobs input[type="text"] {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  background: #fff;
+  color: var(--ink);
+}
+
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 6px;
+  border-radius: 3px;
+  vertical-align: -2px;
+  border: 1px solid var(--line);
+}
+
+a {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+button.primary {
+  width: 100%;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.primary:hover {
+  background: #74173a;
+}
+
+button.primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+button.primary.small {
+  width: auto;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+button.ghost {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+button.ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+button.ghost:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.status {
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--soft);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.status.error {
+  background: #fdf0ef;
+  color: #8f1d17;
+}
+
+.status.ok {
+  background: #f3f7f3;
+  color: #1f5130;
+}
+
+.panel {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.panel:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.note {
+  margin: 6px 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+label {
+  display: block;
+  margin: 12px 0 4px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+input[type="text"],
+input[type="url"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="password"],
+select,
+textarea {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  background: #fff;
+  color: var(--ink);
+}
+
+textarea.prompt {
+  min-height: 360px;
+}
+
+textarea.preview-jd {
+  min-height: 220px;
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 14px;
+}
+
+.grid.three {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 10px 0 0;
+  font-weight: 550;
+}
+
+.check input {
+  margin: 2px 0 0;
+}
+
+.check span {
+  flex: 1;
+}
+
+.check small {
+  display: block;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.counts {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 4px 9px;
+  border-radius: 20px;
+  background: var(--soft);
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.pill.good {
+  background: #eaf3ec;
+  color: #1f5130;
+}
+
+.pill.warn {
+  background: #fdf4e3;
+  color: #8a5a00;
+}
+
+ul.plain {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+
+ul.plain:empty {
+  display: none;
+}
+
+ul.plain li {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+
+ul.plain li:last-child {
+  border-bottom: 0;
+}
+
+ul.plain .what {
+  font-weight: 600;
+}
+
+ul.plain .why {
+  color: var(--muted);
+}
+
+.sticky {
+  position: sticky;
+  bottom: 0;
+  margin-top: 18px;
+  padding: 12px 0 2px;
+  background: linear-gradient(transparent, var(--bg) 25%);
+}
+
+#log {
+  margin-top: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 11.5px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+#log:empty {
+  display: none;
+}
+
+#log div {
+  padding: 5px 9px;
+  border-bottom: 1px solid var(--line);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#log div:last-child {
+  border-bottom: 0;
+}
+
+#log .error {
+  background: #fdf0ef;
+  color: #8f1d17;
+}
+
+#log .warn {
+  background: #fdf9ef;
+  color: #8a5a00;
+}
+
+#log .ok {
+  background: #f3f7f3;
+  color: #1f5130;
+}
+
+.progress {
+  height: 5px;
+  margin-top: 10px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+
+.run-summary {
+  margin-top: 12px;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.status-card {
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--soft);
+}
+
+.status-card strong,
+.status-card span {
+  display: block;
+}
+
+.status-card strong {
+  font-size: 16px;
+  line-height: 1.1;
+}
+
+.status-card span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10.5px;
+}
+
+.status-card.good {
+  background: #f3f7f3;
+  border-color: #cfe0d3;
+  color: #1f5130;
+}
+
+.status-card.warn {
+  background: #fdf9ef;
+  border-color: #eadcb9;
+  color: #8a5a00;
+}
+
+.status-card.bad {
+  background: #fdf0ef;
+  border-color: #edcfcc;
+  color: #8f1d17;
+}
+
+/* The popup's list of forms left open for the applicant. */
+.open-for-you { margin: 6px 0 4px; display: flex; flex-direction: column; gap: 3px; }
+.open-for-you .open-tab { font-size: 12px; text-decoration: none; color: #1f3864; padding: 3px 6px; border-radius: 4px; background: #eef2f8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.open-for-you .open-tab:hover { background: #dfe7f3; }
