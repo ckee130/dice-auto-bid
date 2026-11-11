@@ -17,7 +17,7 @@ export function validatePromptResume(resume, rules, prompt) {
   }
   if (!groupsValid(resume.skill_groups)) errors.push("skill_groups must contain named categories with nonempty string items.");
   if (!groupsValid(resume.additional_categories)) errors.push("additional_categories must be separate competency groups with string items.");
-  if (/55–75 words/.test(prompt) && (words(resume.summary) < 55 || words(resume.summary) > 75)) errors.push("Summary must contain 55–75 words.");
+  if (/55–75 words/.test(prompt) && (words(resume.summary) < 55 || words(resume.summary) > 75)) errors.push(`Summary must contain 55–75 words; found ${words(resume.summary)}.`);
   if (/18–22 chips/.test(prompt) && groupsValid(resume.skill_groups)) {
     const count = resume.skill_groups.reduce((n,g) => n + g.items.length, 0);
     if (count < 18 || count > 24) errors.push(`Technical skills require 18–22 chips (24 only for Core overflow); found ${count}.`);
@@ -38,14 +38,14 @@ export function validatePromptResume(resume, rules, prompt) {
     if (typeof role.role_description !== "string" || !role.role_description.trim()) errors.push(`Role ${i+1}: separate role_description required.`);
     else if (/role_description: Google = 22–26 words/.test(prompt)) {
       const n = words(role.role_description), min = rule.internship ? 14 : 22, max = rule.internship ? 20 : 26;
-      if (n < min || n > max) errors.push(`Role ${i+1}: role_description must contain ${min}–${max} words.`);
+      if (n < min || n > max) errors.push(`Role ${i+1}: role_description must contain ${min}–${max} words; found ${n}.`);
     }
     if (!Array.isArray(role.bullets) || role.bullets.length !== rule.bulletCount) errors.push(`Role ${i + 1}: exactly ${rule.bulletCount} bullets required.`);
     (role.bullets ?? []).forEach((bullet, j) => {
       if (typeof bullet !== "string" || !bullet.trim()) { errors.push(`Role ${i+1}, bullet ${j+1}: nonempty prose required.`); return; }
       if (/Bullet length: Google/.test(prompt)) {
         const max = rule.company === "Google" ? 30 : rule.company === "Shelby.tv" ? 26 : 24;
-        if (words(bullet) > max) errors.push(`Role ${i+1}, bullet ${j+1}: maximum ${max} words.`);
+        if (words(bullet) > max) errors.push(`Role ${i+1}, bullet ${j+1}: maximum ${max} words; found ${words(bullet)}.`);
       }
       if (/\*\*|;/.test(bullet)) errors.push(`Role ${i+1}, bullet ${j+1}: remove markdown or semicolons.`);
       const opener = bullet.trim().split(/\s/)[0].toLowerCase();
@@ -56,8 +56,9 @@ export function validatePromptResume(resume, rules, prompt) {
     });
     if (/Google = exactly 5, Shelby.tv = exactly 1, FaceBook = exactly 0/.test(prompt)) {
       const expected = { Google: 5, "Shelby.tv": 1, FaceBook: 0 }[rule.company];
-      const count = (role.bullets ?? []).filter(b => typeof b === "string" && hasNumericOutcome(b)).length;
-      if (expected !== undefined && count !== expected) errors.push(`${rule.company}: exactly ${expected} explicit numeric outcomes required; found ${count}. Use numeric changes with units, not static scope counts.`);
+      const counted = (role.bullets ?? []).flatMap((b, j) => typeof b === "string" && hasNumericOutcome(b) ? [j + 1] : []);
+      const count = counted.length;
+      if (expected !== undefined && count !== expected) errors.push(`${rule.company}: exactly ${expected} explicit numeric outcomes required; found ${count}. Counted bullet numbers: ${counted.join(", ") || "none"}. ${count < expected ? `Revise ${expected - count} currently uncounted bullet(s) to express supported numeric changes.` : `Rewrite ${count - expected} counted bullet(s) qualitatively.`} Recognized formats include "by 20%", "from 900ms to 500ms", or "2x". Static scope counts do not qualify. Preserve all other bullets and do not invent measurements.`);
     }
   });
   return errors;
@@ -93,7 +94,7 @@ export async function generatePromptResume(jd, options, signal, modelCall = call
       errors = validatePromptResume(raw, rules, options.systemPrompt);
     } catch (error) { errors = [`Invalid JSON/schema: ${error.message}`]; }
     if (!errors.length) return { resume: toRenderResume(raw, options.candidate), violations: [], usage, repairPasses: pass };
-    messages.push({ role: "assistant", content: response.text }, { role: "user", content: `Correct these violations of the main prompt and return the complete JSON again:\n${errors.join("\n")}` });
+    messages.push({ role: "assistant", content: response.text }, { role: "user", content: `Correct these violations of the main prompt and return the complete JSON again. Make targeted edits to the failing fields; preserve compliant fields. Count words and numeric-outcome bullets before responding:\n${errors.join("\n")}` });
   }
   throw new Error(`Resume does not satisfy the main prompt after 3 attempts: ${errors.slice(0,8).join(" ")}`);
 }

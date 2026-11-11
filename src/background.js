@@ -29,6 +29,7 @@ import { answerQuestion, AiError } from "./ai.js";
 import { checkWriter, educationFrom, WriterError, writeApplication } from "./writer.js";
 import { describe as describeSpend, resetRun as resetSpend, runTotal } from "./spend.js";
 import { dicePage } from "./dice.js";
+import { waitForSubmission } from "./submission.js";
 import { captureEvidence } from "./evidence.js";
 import { postingUrl, wizardUrl } from "./links.js";
 import { mrkdwn, needsYouMessage, postSlack, runSummaryMessage, slackConfigured } from "./slack.js";
@@ -496,9 +497,9 @@ async function runOne(application, profile) {
 
             const submitted = await inPage(tabId, "press", { label: "Submit" });
             if (!submitted?.ok) return handOver("failed", `Submit did not go through${submitted?.errors?.length ? `: ${submitted.errors.join("; ")}` : submitted?.error ? `: ${submitted.error}` : ""}`);
-            const after = await wizardState(tabId, 15000);
+            const after = await waitForSubmission(() => inPage(tabId, "state"));
             detail.boardSaid = after.text?.slice(0, 300);
-            if (after.step === "done") {
+            if (after.step === "done" || after.step === "applied") {
               log("ok", `${label} - submitted`);
               return { ...result("submitted", ""), tabId };
             }
