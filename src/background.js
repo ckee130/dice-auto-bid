@@ -652,7 +652,7 @@ const stopsTheRun = (error) =>
   (error instanceof AiError && error.fatal) ||
   (error instanceof WriterError && [401, 402, 403].includes(error.status));
 
-/** Skipped and failed postings are left alone for this long before being tried again. */
+/** Skipped postings are left alone for this long before being tried again. */
 const PASS_DAYS = 7;
 
 /** How many postings are read and written ahead of the one being sent. */
@@ -722,7 +722,8 @@ async function run() {
   const applied = new Set(counted.map((row) => jobKey(row.company, row.title)).filter(Boolean));
   const companies = new Set(counted.map((row) => companyKey(row.company)).filter(Boolean));
   if (applied.size > 0) await keep(historyPath(profile, "applied-jobs.txt"), appliedJobsText(recorded), { overwrite: true });
-  const resting = (id) => passed[id] && Date.now() - passed[id] < PASS_DAYS * 86400000;
+  const failed = new Set(recorded.filter((row) => row.status === "failed").map((row) => row.id));
+  const resting = (id) => !failed.has(id) && passed[id] && Date.now() - passed[id] < PASS_DAYS * 86400000;
 
   // Chrome ends a worker that goes thirty seconds without an extension API
   // call, and writing a resume takes longer than that.
@@ -760,7 +761,8 @@ async function run() {
   };
 
   const fresh = loaded.filter((entry) => !(sent.has(entry.id) || elsewhere.has(entry.id) || resting(entry.id)));
-  log("info", `${loaded.length} link(s) loaded in settings; ${fresh.length} new to work through.`);
+  const retries = fresh.filter((entry) => failed.has(entry.id)).length;
+  log("info", `${loaded.length} link(s) loaded in settings; ${fresh.length} to work through${retries ? ` (${retries} previously failed, retrying now)` : ""}.`);
   await keep(
     `${dayRoot(profile)}/links/${stamp()} loaded.txt`,
     [
@@ -878,7 +880,10 @@ async function run() {
       await chrome.storage.local.set({ submitted: [...sent] });
       await keep(historyPath(profile, "applied-links.txt"), [...sent].map(postingUrl).join("\n"), { overwrite: true });
       await keep(historyPath(profile, "applied-jobs.txt"), appliedJobsText(await allResults()), { overwrite: true });
-    } else if (result.status === "skipped" || result.status === "failed" || result.status === "dry-run") {
+    } else if (result.status === "failed") {
+      delete passed[entry.id];
+      await chrome.storage.local.set({ passed });
+    } else if (result.status === "skipped" || result.status === "dry-run") {
       await passOver(entry.id);
     }
 
