@@ -50,7 +50,7 @@ test("adapter preserves role descriptions and separates competencies from techni
  assert.equal(r.coreSkills.length,4);assert.equal(r.competencies.length,3);
  assert.equal(r.experience[0].startDate,"Oct 2013");assert.equal(r.experience[0].endDate,"Present");
 });
-test("repair calls use the main prompt verbatim and no legacy rules",async()=> {
+test("first usable draft proceeds despite prompt violations",async()=> {
  let calls=0;
  const result=await generatePromptResume("Target JD",{systemPrompt:prompt,slots:[],candidate},undefined,async request=>{
    assert.equal(request.system,prompt);
@@ -58,10 +58,10 @@ test("repair calls use the main prompt verbatim and no legacy rules",async()=> {
    const r=fixture();if(!calls++)r.experience[0].bullets.pop();
    return {text:JSON.stringify(r),inputTokens:10,outputTokens:20};
  });
- assert.equal(calls,2);assert.equal(result.usage.calls,2);assert.equal(result.resume.experience[0].bullets.length,10);
+ assert.equal(calls,1);assert.equal(result.usage.calls,1);assert.equal(result.resume.experience[0].bullets.length,9);
 });
-test("exhausted repairs fail instead of returning a noncompliant best draft",async()=> {
- await assert.rejects(generatePromptResume("JD",{systemPrompt:prompt,slots:[],candidate},undefined,async()=>({text:"{}"})),/does not satisfy the main prompt/);
+test("unusable JSON still fails document conversion after retries",async()=> {
+ await assert.rejects(generatePromptResume("JD",{systemPrompt:prompt,slots:[],candidate},undefined,async()=>({text:"{}"})),/could not be read or converted/);
 });
 test("PDF renders full prompt structure with separate competency section",async()=> {
  const bytes=await buildPromptResumePdf(toRenderResume(fixture(),candidate),DEFAULT_THEME);

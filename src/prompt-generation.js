@@ -1,4 +1,4 @@
-/** Resume generation governed by the user's prompt, without the vendor's competing rules. */
+/** Follow the user's prompt when generating; prompt compliance never gates submission. */
 import { callModel } from "./vendor/generation.js";
 
 import { employmentRules } from "./prompt-rules.js";
@@ -91,10 +91,10 @@ export async function generatePromptResume(jd, options, signal, modelCall = call
     let raw;
     try {
       raw = JSON.parse(response.text.trim().replace(/^```(?:json)?\s*|\s*```$/g, ""));
-      errors = validatePromptResume(raw, rules, options.systemPrompt);
+      // Accept the first usable draft, regardless of prompt word/count/style rules.
+      return { resume: toRenderResume(raw, options.candidate), violations: [], usage, repairPasses: pass };
     } catch (error) { errors = [`Invalid JSON/schema: ${error.message}`]; }
-    if (!errors.length) return { resume: toRenderResume(raw, options.candidate), violations: [], usage, repairPasses: pass };
-    messages.push({ role: "assistant", content: response.text }, { role: "user", content: `Correct these violations of the main prompt and return the complete JSON again. Make targeted edits to the failing fields; preserve compliant fields. Count words and numeric-outcome bullets before responding:\n${errors.join("\n")}` });
+    messages.push({ role: "assistant", content: response.text }, { role: "user", content: `Return valid JSON in the requested resume schema so the extension can build the document. Fix these parsing/structure errors:\n${errors.join("\n")}` });
   }
-  throw new Error(`Resume does not satisfy the main prompt after 3 attempts: ${errors.slice(0,8).join(" ")}`);
+  throw new Error(`Resume could not be read or converted to a document after 3 attempts: ${errors.slice(0,8).join(" ")}`);
 }

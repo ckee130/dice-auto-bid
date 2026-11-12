@@ -328,7 +328,7 @@ export async function writeResumePreview(profile, job, signal) {
  * a posting this bot cannot submit never costs a model call.
  *
  * Explicit employment locks in the main prompt take precedence. Otherwise,
- * the profile job rows define the employers and dates. Validated content is
+ * the profile job rows define the employers and dates. Generated content is
  * adapted to PDF fields without rewriting its employment history.
  */
 export async function writeApplication(profile, job, signal) {
@@ -350,7 +350,7 @@ export async function writeApplication(profile, job, signal) {
       signal,
     );
 
-    // Generation has already validated the main prompt. Do not repin dates,
+    // Use the generated draft without a prompt-compliance gate. Do not repin dates,
     // employers or counts from settings over its explicit employment locks.
     const resume = generated.resume;
     const role = job.title?.trim() || resume.targetTitle || "the role";
