@@ -3,7 +3,7 @@
  * written on, and how the run behaves.
  */
 
-import { ACCENTS, checkWriter, defaultResumePrompt, FONTS, FORMATS, monthLabel, writeResumePreview } from "./writer.js";
+import { ACCENTS, checkWriter, defaultModel, defaultResumePrompt, FONTS, FORMATS, monthLabel, writeResumePreview } from "./writer.js";
 import { buildQueue } from "./links.js";
 import { DEFAULT_PROFILE, experiencePeriods } from "./profile.js";
 import { allLinks, clearLinks, readProfile, saveLinks, writeProfile } from "./store.js";
@@ -72,6 +72,7 @@ function fillProfile(profile) {
   }
   $("accentColor").dispatchEvent(new Event("fill"));
   $("resumeFormat").dispatchEvent(new Event("fill"));
+  $("model").placeholder = defaultModel($("provider").value);
   renderJobs(Array.isArray(profile.experience) ? profile.experience : DEFAULT_PROFILE.experience);
   if (!$("resumePrompt").value.trim()) $("resumePrompt").value = defaultResumePrompt(profile);
 }
@@ -392,6 +393,11 @@ $("import-settings").addEventListener("click", () => $("settings-file").click())
 $("settings-file").addEventListener("change", (event) => {
   const [file] = event.target.files ?? [];
   if (file) importSettings(file);
+});
+
+$("provider").addEventListener("change", () => {
+  $("model").value = "";
+  $("model").placeholder = defaultModel($("provider").value);
 });
 
 fillChoices();
